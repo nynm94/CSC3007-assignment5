@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.css" />
+    <style>
+        #map {
+            width: 1000px;
+            height: 600px;
+        }
+
+        .marker {
+            width: 24px !important;
+            height: 24px !important;
+            margin-left: -12px;
+            margin-top: -12px;
+            border-radius: 18px;
+            border: 2px solid green;
+            text-align: center;
+            color: yellow;
+            background-color: #90EE90;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.js"></script>
+    <div id="map"></div>
+    <script>
+        // api url
+        const api_url = "https://api.data.gov.sg/v1/environment/psi";
+
+        // Defining async function
+        async function getapi(url) {
+
+            // Storing response
+            const response = await fetch(url);
+
+            // Storing data in form of JSON
+            var data = await response.json();
+            var psi_24h = data.items[0].readings.psi_twenty_four_hourly
+            var metadata = data.region_metadata
+            var dict = {}
+
+            metadata.forEach(element => {
+                var region = element.name
+                let values = Object.values(element.label_location)
+                dict[region] = values
+            })
+
+            let tiles = new L.tileLayer('https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png', {
+                detectRetina: true,
+                maxZoom: 18,
+                minZoom: 11,
+                //Do not remove this attribution
+                attribution: '<img src="https://docs.onemap.sg/maps/images/oneMap64-01.png" style="height:20px;width:20px;">' +
+                    'New OneMap | Map data © contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>'
+            });
+
+            let map = new L.Map("map", {
+                center: [1.347833, 103.809357],
+                zoom: 11,
+                maxBounds: L.latLngBounds(L.latLng(1.1, 103.5), L.latLng(1.5, 104.3))
+            })
+                .addLayer(tiles);
+
+            for (const [key, value] of Object.entries(dict)) {
+                circle = L.marker(value, {
+                    icon: L.divIcon({
+                        className: 'marker',
+                        html: psi_24h[key]
+                    })
+                });
+                circle.addTo(map);
+            }
+
+        }
+
+        // Calling that async function
+        getapi(api_url);
+        
+    </script>
+
+</body>
+
+</html>
